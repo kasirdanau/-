@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kasir Bazaar Satu Benih</title>
+<style>
+:root{--g:#087f5b;--bg:#f3f7f5;--line:#dfe8e2;--text:#18352a}
+*{box-sizing:border-box}
+body{margin:0;font:14px Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit;padding:10px;border-radius:8px;border:1px solid var(--line)}
+button{cursor:pointer;font-weight:bold}
+.primary{background:var(--g);color:white;border:0}
+.light{background:white}
+.danger{background:#ffebeb;color:#b42336}
+header{background:white;border-bottom:1px solid var(--line);padding:15px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+header h2{margin:0;font-size:19px}
+.layout{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 65px)}
+nav{background:white;padding:12px;border-right:1px solid var(--line)}
+nav button{display:block;width:100%;text-align:left;margin-bottom:6px;background:white;border:0}
+nav button.active,nav button:hover{background:#e6f5ed;color:var(--g)}
+main{padding:22px;min-width:0}
+.page{display:none}.page.active{display:block}
+h1{font-size:24px;margin:0 0 6px}h3{margin-top:0}
+.muted{color:#6b7c74;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+.stat,.panel{background:white;border:1px solid var(--line);border-radius:13px;padding:16px;margin-bottom:15px}
+.stat strong{display:block;font-size:23px;margin-top:8px;overflow-wrap:anywhere}
+.grid{display:grid;grid-template-columns:1.3fr 1fr;gap:15px}
+.toolbar{display:flex;gap:8px;margin-bottom:12px}
+.toolbar input{flex:1;min-width:0}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:9px}
+.product{background:white;border:1px solid var(--line);padding:12px;text-align:left;border-radius:11px}
+.product:hover{border-color:var(--g)}
+.product .emoji{font-size:27px;margin-bottom:8px}
+.product b{display:block;margin-bottom:6px}
+.product small{display:block;color:#65776d;line-height:1.5}
+.price{color:var(--g);font-weight:bold;margin-top:9px}
+.field{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+.field label{font-weight:bold;font-size:12px}
+.field input,.field select{width:100%;background:white}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0}
+.cartline{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.cartinfo{flex:1;min-width:0}.cartinfo b{display:block}.cartinfo small{color:#66776e}
+.qty{display:flex;align-items:center;gap:5px}
+.qty button{padding:5px 9px}
+.total{font-size:20px;font-weight:bold;border-top:1px dashed #bbb;padding-top:13px}
+.full{width:100%}
+.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:580px;background:white}
+th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line)}
+th{background:#f4f8f5;font-size:12px}
+td{font-size:13px}
+.actions{display:flex;gap:5px;flex-wrap:wrap}
+.actions button{padding:7px;font-size:12px}
+.notice{padding:12px;background:#fff4d6;border-radius:9px;margin-bottom:12px;line-height:1.5}
+.empty{text-align:center;padding:25px;color:#718078}
+#login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.loginbox{background:white;padding:28px;border:1px solid var(--line);border-radius:18px;width:min(420px,100%)}
+.loginbox h1{margin-bottom:8px}
+.hidden{display:none!important}
+#toast{position:fixed;bottom:18px;right:18px;background:#163c2b;color:white;padding:13px;border-radius:9px;max-width:90%;z-index:20}
+#modal{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:15px;z-index:10}
+.modalbox{background:white;padding:22px;border-radius:14px;width:min(500px,100%);max-height:90vh;overflow:auto}
+#receipt{display:none}
+@media(max-width:850px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.layout{grid-template-columns:1fr}nav{display:flex;overflow:auto;gap:5px;border-right:0;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:4}nav button{white-space:nowrap;width:auto;margin:0}main{padding:13px}}
+@media(max-width:480px){header{padding:12px}header h2{font-size:15px}main{padding:10px}.stats{gap:7px}.stat{padding:11px}.stat strong{font-size:18px}.panel{padding:12px}}
+@media print{
+body *{visibility:hidden!important}
+#receipt,#receipt *{visibility:visible!important}
+#receipt{display:block!important;position:absolute;left:0;top:0;width:72mm;padding:2mm;font:11px monospace;color:#000}
+@page{size:80mm auto;margin:3mm}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="loginbox">
+    <h1>🧾 Kasir Bazaar</h1>
+    <p class="muted">Satu Benih · Kasir pusat semua booth</p>
+    <div id="loginerror" class="notice hidden"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="Email kasir"></div>
+    <div class="field"><label>Password</label><input id="password" type="password" placeholder="Minimal 6 karakter"></div>
+    <div class="row">
+      <button class="primary" id="loginbtn">Masuk</button>
+      <button id="registerbtn">Buat akun</button>
+    </div>
+    <p class="muted">Buat akun kasir pertama kali, kemudian gunakan akun tersebut untuk masuk.</p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <div><h2>🧾 Kasir Bazaar Satu Benih</h2><span class="muted">Pesan di kasir · Ambil di booth</span></div>
+  <button id="logout">Keluar</button>
+</header>
+<div class="layout">
+<nav>
+  <button class="active" data-page="dashboard">▦ Dashboard</button>
+  <button data-page="kasir">🛒 Kasir</button>
+  <button data-page="produk">📦 Produk & Booth</button>
+  <button data-page="transaksi">🧾 Transaksi</button>
+  <button data-page="pengeluaran">💰 Pengeluaran</button>
+</nav>
+<main>
+<section id="dashboard" class="page active">
+  <h1>Dashboard</h1><p class="muted">Ringkasan bazaar hari ini.</p>
+  <div class="stats">
+    <div class="stat">Omzet hari ini<strong id="omzet">Rp0</strong></div>
+    <div class="stat">Transaksi<strong id="jumlahtransaksi">0</strong></div>
+    <div class="stat">Produk aktif<strong id="jumlahproduk">0</strong></div>
+    <div class="stat">Pengeluaran<strong id="jumlahpengeluaran">Rp0</strong></div>
+  </div>
+  <div class="panel"><h3>Transaksi terbaru</h3><div id="recent" class="tablewrap"></div></div>
+  <div class="panel"><h3>Rekap penjualan per booth</h3><div id="rekapbooth" class="tablewrap"></div></div>
+</section>
+
+<section id="kasir" class="page">
+  <h1>Kasir Pusat</h1><p class="muted">Pilih produk dari booth mana saja.</p>
+  <div class="grid">
+    <div class="panel">
+      <div class="toolbar"><input id="cari" placeholder="Cari produk atau booth..."><select id="filterbooth"><option value="">Semua booth</option></select></div>
+      <div id="daftarproduk" class="products"></div>
+    </div>
+    <div class="panel">
+      <div class="row"><h3>Keranjang</h3><button id="kosongkan">Kosongkan</button></div>
+      <div id="keranjang"></div>
+      <div class="row"><span>Jumlah item</span><b id="itemcount">0</b></div>
+      <div class="row total"><span>Total</span><span id="total">Rp0</span></div>
+      <div class="field"><label>Nama pembeli (opsional)</label><input id="pembeli" placeholder="Nama pembeli"></div>
+      <div class="field"><label>Uang diterima (Rp)</label><input id="tunai" type="number" min="0" placeholder="Nominal uang"></div>
+      <div class="row"><span>Kembalian</span><b id="kembalian">Rp0</b></div>
+      <button class="primary full" id="bayar">Bayar & Cetak Struk</button>
+      <p class="muted">Setelah pembayaran berhasil, stok akan berkurang otomatis.</p>
+    </div>
+  </div>
+</section>
+
+<section id="produk" class="page">
+  <div class="row"><div><h1>Produk & Booth</h1><p class="muted">Lokasi booth akan tercetak di struk.</p></div><button class="primary" id="tambahproduk">＋ Tambah</button></div>
+  <div class="notice">Setiap produk wajib memiliki nomor booth dan nama booth agar pengunjung tahu lokasi pengambilan.</div>
+  <div class="panel"><input id="cariproduk" placeholder="Cari produk..." style="width:100%;margin-bottom:12px"><div id="tabelproduk" class="tablewrap"></div></div>
+</section>
+
+<section id="transaksi" class="page">
+  <div class="row"><div><h1>Riwayat Transaksi</h1><p class="muted">Cetak ulang struk dan ekspor rekap.</p></div><button id="ekspor">Ekspor CSV</button></div>
+  <div class="panel"><input id="caritransaksi" placeholder="Cari nomor pesanan atau pembeli..." style="width:100%;margin-bottom:12px"><div id="tabeltransaksi" class="tablewrap"></div></div>
+</section>
+
+<section id="pengeluaran" class="page">
+  <div class="row"><div><h1>Pengeluaran</h1><p class="muted">Catat biaya operasional bazaar.</p></div><button class="primary" id="tambahpengeluaran">＋ Catat</button></div>
+  <div class="panel"><div id="tabelpengeluaran" class="tablewrap"></div></div>
+</section>
+</main></div></div>
+
+<div id="modal" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+<div id="receipt"></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,collection,doc,addDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyC_PyFNRRyYx9oONhiwusOesWEdr7LDC8A",
+ authDomain:"kasir-5fe7c.firebaseapp.com",
+ projectId:"kasir-5fe7c",
+ storageBucket:"kasir-5fe7c.firebasestorage.app",
+ messagingSenderId:"924068958179",
+ appId:"1:924068958179:web:3e918f80e8d9dd3e7bdad6",
+ measurementId:"G-06LT0C9TKY"
+};
+const appfb=initializeApp(firebaseConfig),auth=getAuth(appfb),db=getFirestore(appfb);
+const $=id=>document.getElementById(id);
+const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dt=x=>{const d=x?.toDate?x.toDate():new Date(x||Date.now());return d.toLocaleString('id-ID')};
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`};
+const isToday=x=>{const d=x?.toDate?x.toDate():new Date(x||0);return today()===`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`};
+let products=[],sales=[],expenses=[],cart=[],unsubs=[],toastTimer;
+
+function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.add('hidden'),3200)}
+function loginError(s){$('loginerror').textContent=s;$('loginerror').classList.remove('hidden')}
+$('loginbtn').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){loginError(e.message)}};
+$('registerbtn').onclick=async()=>{try{if($('password').value.length<6)throw Error('Password minimal 6 karakter.');await createUserWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){loginError(e.message)}};
+$('logout').onclick=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{if(u){$('login').classList.add('hidden');$('app').classList.remove('hidden');start()}else{$('app').classList.add('hidden');$('login').classList.remove('hidden');unsubs.forEach(f=>f());unsubs=[]}});
+function start(){
+ unsubs.forEach(f=>f());unsubs=[];
+ unsubs.push(onSnapshot(collection(db,'produk'),s=>{products=s.docs.map(d=>({id:d.id,...d.data()}));renderProducts();renderPOS();renderDashboard();boothOptions()},e=>toast('Gagal memuat produk: '+e.message)));
+ unsubs.push(onSnapshot(query(collection(db,'transaksi'),orderBy('createdAt','desc')),s=>{sales=s.docs.map(d=>({id:d.id,...d.data()}));renderSales();renderDashboard();renderBooths()},e=>toast('Gagal memuat transaksi: '+e.message)));
+ unsubs.push(onSnapshot(query(collection(db,'pengeluaran'),orderBy('createdAt','desc')),s=>{expenses=s.docs.map(d=>({id:d.id,...d.data()}));renderExpenses();renderDashboard()},e=>toast('Gagal memuat pengeluaran: '+e.message)));
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(b.dataset.page).classList.add('active')});
+
+function renderDashboard(){
+ const ss=sales.filter(s=>isToday(s.createdAt)),ee=expenses.filter(s=>isToday(s.createdAt));
+ $('omzet').textContent=rupiah(ss.reduce((a,s)=>a+Number(s.total||0),0));
+ $('jumlahtransaksi').textContent=ss.length;
+ $('jumlahproduk').textContent=products.filter(p=>p.active!==false).length;
+ $('jumlahpengeluaran').textContent=rupiah(ee.reduce((a,s)=>a+Number(s.amount||0),0));
+ $('recent').innerHTML=ss.length?table(['Nomor','Waktu','Pembeli','Total','Aksi'],ss.slice(0,8).map(s=>[esc(s.number),dt(s.createdAt),esc(s.buyer||'Umum'),rupiah(s.total),`<button onclick="window.reprint('${s.id}')">Cetak</button>`])):'<div class="empty">Belum ada transaksi hari ini.</div>';
+}
+function table(head,rows){return `<table><thead><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function boothOptions(){const sel=$('filterbooth'),old=sel.value,bs=[...new Set(products.map(p=>`${p.boothNo||''}|${p.boothName||''}`))];sel.innerHTML='<option value="">Semua booth</option>'+bs.map(b=>`<option value="${esc(b)}">${esc(b.replace('|',' · '))}</option>`).join('');sel.value=bs.includes(old)?old:''}
+$('cari').oninput=renderPOS;$('filterbooth').onchange=renderPOS;
+function renderPOS(){
+ const q=$('cari').value.toLowerCase(),booth=$('filterbooth').value;
+ const arr=products.filter(p=>p.active!==false&&Number(p.stock)>0&&(`${p.name} ${p.boothNo} ${p.boothName} ${p.category}`.toLowerCase().includes(q))&&(!booth||`${p.boothNo||''}|${p.boothName||''}`===booth));
+ $('daftarproduk').innerHTML=arr.length?arr.map(p=>`<button class="product" onclick="window.addCart('${p.id}')"><div class="emoji">${esc(p.emoji||'🍽️')}</div><b>${esc(p.name)}</b><small>Booth ${esc(p.boothNo||'-')} · ${esc(p.boothName||'Belum diatur')}</small><small>Stok ${Number(p.stock||0)}</small><div class="price">${rupiah(p.price)}</div></button>`).join(''):'<div class="empty">Tidak ada produk atau stok habis.</div>';
+ renderCart();
+}
+window.addCart=id=>{const p=products.find(x=>x.id===id);if(!p)return;let it=cart.find(x=>x.id===id);if(it){if(it.qty>=Number(p.stock||0))return toast('Stok tidak cukup.');it.qty++}else cart.push({id:p.id,name:p.name,price:Number(p.price),qty:1,stock:Number(p.stock),boothNo:p.boothNo||'',boothName:p.boothName||'',emoji:p.emoji||'🍽️'});renderCart()};
+window.changeQty=(id,n)=>{const it=cart.find(x=>x.id===id),p=products.find(x=>x.id===id);if(!it)return;if(it.qty+n<1)cart=cart.filter(x=>x.id!==id);else if(it.qty+n>Number(p?.stock||it.stock))return toast('Stok tidak cukup.');else it.qty+=n;renderCart()};
+window.removeCart=id=>{cart=cart.filter(x=>x.id!==id);renderCart()};
+function renderCart(){
+ $('keranjang').innerHTML=cart.length?cart.map(i=>`<div class="cartline"><div class="cartinfo"><b>${esc(i.name)}</b><small>Booth ${esc(i.boothNo)} · ${rupiah(i.price)}</small></div><div class="qty"><button onclick="window.changeQty('${i.id}',-1)">−</button><b>${i.qty}</b><button onclick="window.changeQty('${i.id}',1)">+</button><button class="danger" onclick="window.removeCart('${i.id}')">×</button></div></div>`).join(''):'<div class="empty">Keranjang kosong.</div>';
+ $('itemcount').textContent=cart.reduce((a,i)=>a+i.qty,0);$('total').textContent=rupiah(cart.reduce((a,i)=>a+i.price*i.qty,0));changeCash();
+}
+function changeCash(){const total=cart.reduce((a,i)=>a+i.price*i.qty,0);$('kembalian').textContent=rupiah(Math.max(0,Number($('tunai').value||0)-total))}
+$('tunai').oninput=changeCash;$('kosongkan').onclick=()=>{cart=[];renderCart()};
+$('bayar').onclick=async()=>{
+ if(!cart.length)return toast('Keranjang masih kosong.');
+ const total=cart.reduce((a,i)=>a+i.price*i.qty,0),cash=Number($('tunai').value||0);
+ if(cash<total)return toast('Uang yang diterima belum cukup.');
+ if(cart.some(i=>!i.boothNo||!i.boothName))return toast('Isi nomor dan nama booth untuk setiap produk terlebih dahulu.');
+ const items=cart.map(i=>({...i})),now=new Date();
+ const number='SB-'+now.getFullYear().toString().slice(-2)+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+String(now.getTime()).slice(-6);
+ const sale={number,buyer:$('pembeli').value.trim()||'Umum',items,total,cash,change:cash-total,payment:'Tunai',createdAt:now};
+ $('bayar').disabled=true;
+ try{
+  await runTransaction(db,async tx=>{
+   const refs=items.map(i=>doc(db,'produk',i.id)),snaps=[];
+   for(const ref of refs)snaps.push(await tx.get(ref));
+   snaps.forEach((s,i)=>{if(!s.exists())throw Error('Produk tidak ditemukan.');if(Number(s.data().stock||0)<items[i].qty)throw Error('Stok '+items[i].name+' tidak cukup.')});
+   snaps.forEach((s,i)=>tx.update(refs[i],{stock:Number(s.data().stock||0)-items[i].qty,updatedAt:serverTimestamp()}));
+   tx.set(doc(collection(db,'transaksi')),{...sale,createdAt:now,createdAtServer:serverTimestamp()});
+  });
+  cart=[];renderCart();$('pembeli').value='';$('tunai').value='';printReceipt(sale);toast('Pembayaran berhasil.');
+ }catch(e){toast('Transaksi gagal: '+e.message)}finally{$('bayar').disabled=false}
+};
+function printReceipt(s){
+ $('receipt').innerHTML=`<center><b style="font-size:15px">BAZAAR SATU BENIH</b><br>BUKTI PEMBAYARAN</center><hr><div>No: <b>${esc(s.number)}</b></div><div>Waktu: ${esc(dt(s.createdAt))}</div><div>Pembeli: ${esc(s.buyer)}</div><hr>${s.items.map(i=>`<div style="margin-top:5px"><b>${esc(i.name)} × ${i.qty}</b></div><div>Booth ${esc(i.boothNo)} · ${esc(i.boothName)}</div><div style="display:flex;justify-content:space-between"><span>${rupiah(i.price)} x ${i.qty}</span><span>${rupiah(i.price*i.qty)}</span></div>`).join('')}<hr><div style="display:flex;justify-content:space-between"><b>TOTAL</b><b>${rupiah(s.total)}</b></div><div style="display:flex;justify-content:space-between"><span>Tunai</span><span>${rupiah(s.cash)}</span></div><div style="display:flex;justify-content:space-between"><span>Kembalian</span><span>${rupiah(s.change)}</span></div><hr><center><b>Ambil pesanan di booth masing-masing.</b><br>Simpan struk sampai pesanan diterima.<br>Terima kasih!</center>`;
+ window.print();
+}
+window.reprint=id=>{const s=sales.find(x=>x.id===id);if(s)printReceipt(s)};
+$('tambahproduk').onclick=()=>productForm();
+$('cariproduk').oninput=renderProducts;
+function renderProducts(){
+ const q=$('cariproduk').value.toLowerCase(),arr=products.filter(p=>`${p.name} ${p.boothNo} ${p.boothName} ${p.category}`.toLowerCase().includes(q));
+ $('tabelproduk').innerHTML=arr.length?table(['Produk','Booth','Harga','Stok','Status','Aksi'],arr.map(p=>[`${esc(p.emoji||'🍽️')} <b>${esc(p.name)}</b><br><small>${esc(p.category||'Umum')}</small>`,`Booth ${esc(p.boothNo||'-')}<br>${esc(p.boothName||'')}`,rupiah(p.price),Number(p.stock||0),p.active===false?'Nonaktif':'Aktif',`<div class="actions"><button onclick="window.editProduct('${p.id}')">Edit</button><button class="danger" onclick="window.toggleProduct('${p.id}')">${p.active===false?'Aktifkan':'Nonaktif'}</button></div>`])):'<div class="empty">Belum ada produk.</div>';
+}
+window.editProduct=id=>{const p=products.find(x=>x.id===id);if(p)productForm(p)};
+window.toggleProduct=async id=>{const p=products.find(x=>x.id===id);try{await updateDoc(doc(db,'produk',id),{active:p.active===false,updatedAt:serverTimestamp()});toast('Status produk diubah.')}catch(e){toast(e.message)}};
+function productForm(p=null){
+ $('modal').classList.remove('hidden');
+ $('modal').innerHTML=`<div class="modalbox"><div class="row"><h3>${p?'Edit':'Tambah'} Produk</h3><button onclick="window.closeModal()">✕</button></div><form id="formproduk">
+ <div class="field"><label>Nama produk *</label><input name="name" required value="${esc(p?.name||'')}" placeholder="Contoh: Bakso"></div>
+ <div class="field"><label>Harga (Rp) *</label><input name="price" type="number" min="0" required value="${p?.price??''}"></div>
+ <div class="field"><label>Stok *</label><input name="stock" type="number" min="0" required value="${p?.stock??''}"></div>
+ <div class="field"><label>Nomor booth *</label><input name="boothNo" required value="${esc(p?.boothNo||'')}" placeholder="Contoh: 03"></div>
+ <div class="field"><label>Nama booth *</label><input name="boothName" required value="${esc(p?.boothName||'')}" placeholder="Contoh: Booth Makanan"></div>
+ <div class="field"><label>Kategori</label><input name="category" value="${esc(p?.category||'Makanan')}" placeholder="Makanan/Minuman"></div>
+ <div class="field"><label>Emoji</label><input name="emoji" value="${esc(p?.emoji||'🍽️')}"></div>
+ <button class="primary full">Simpan Produk</button></form></div>`;
+ $('formproduk').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),d={name:String(f.get('name')).trim(),price:Number(f.get('price')),stock:Number(f.get('stock')),boothNo:String(f.get('boothNo')).trim(),boothName:String(f.get('boothName')).trim(),category:String(f.get('category')||'Umum'),emoji:String(f.get('emoji')||'🍽️'),active:p?.active!==false,updatedAt:serverTimestamp()};try{if(p)await updateDoc(doc(db,'produk',p.id),d);else await addDoc(collection(db,'produk'),{...d,createdAt:serverTimestamp()});closeModal();toast('Produk tersimpan.')}catch(err){toast('Gagal: '+err.message)}};
+}
+window.closeModal=()=>$('modal').classList.add('hidden');
+$('caritransaksi').oninput=renderSales;
+function renderSales(){const q=$('caritransaksi').value.toLowerCase(),arr=sales.filter(s=>`${s.number} ${s.buyer}`.toLowerCase().includes(q));$('tabeltransaksi').innerHTML=arr.length?table(['Nomor','Tanggal','Pembeli','Item','Total','Aksi'],arr.map(s=>[esc(s.number),dt(s.createdAt),esc(s.buyer||'Umum'),(s.items||[]).reduce((a,i)=>a+i.qty,0),rupiah(s.total),`<div class="actions"><button onclick="window.reprint('${s.id}')">Cetak</button><button onclick="window.detailSale('${s.id}')">Detail</button></div>`])):'<div class="empty">Belum ada transaksi.</div>'}
+window.detailSale=id=>{const s=sales.find(x=>x.id===id);if(!s)return;$('modal').classList.remove('hidden');$('modal').innerHTML=`<div class="modalbox"><div class="row"><h3>Pesanan ${esc(s.number)}</h3><button onclick="window.closeModal()">✕</button></div><p>${dt(s.createdAt)} · ${esc(s.buyer||'Umum')}</p>${s.items.map(i=>`<div class="row"><span>${esc(i.name)} × ${i.qty}<br><small>Booth ${esc(i.boothNo)} · ${esc(i.boothName)}</small></span><b>${rupiah(i.price*i.qty)}</b></div>`).join('')}<div class="row total"><span>Total</span><span>${rupiah(s.total)}</span></div><button class="primary full" onclick="window.reprint('${s.id}');window.closeModal()">Cetak Struk</button></div>`};
+$('ekspor').onclick=()=>{const rows=[['Nomor','Tanggal','Pembeli','Produk','Booth','Jumlah','Harga','Subtotal','Total']];sales.forEach(s=>(s.items||[]).forEach(i=>rows.push([s.number,dt(s.createdAt),s.buyer,i.name,`${i.boothNo} ${i.boothName}`,i.qty,i.price,i.qty*i.price,s.total])));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');const a=document.createElement('a'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.href=url;a.download='rekap-bazaar.csv';a.click();URL.revokeObjectURL(url)};
+$('tambahpengeluaran').onclick=expenseForm;
+function expenseForm(){
+ $('modal').classList.remove('hidden');$('modal').innerHTML=`<div class="modalbox"><div class="row"><h3>Catat Pengeluaran</h3><button onclick="window.closeModal()">✕</button></div><form id="formexpense"><div class="field"><label>Nama pengeluaran *</label><input name="name" required></div><div class="field"><label>Jumlah (Rp) *</label><input name="amount" type="number" min="1" required></div><div class="field"><label>Kategori</label><select name="category"><option>Operasional</option><option>Bahan</option><option>Konsumsi</option><option>Transportasi</option><option>Lainnya</option></select></div><div class="field"><label>Catatan</label><input name="note"></div><button class="primary full">Simpan</button></form></div>`;
+ $('formexpense').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await addDoc(collection(db,'pengeluaran'),{name:String(f.get('name')),amount:Number(f.get('amount')),category:String(f.get('category')),note:String(f.get('note')||''),createdAt:new Date(),createdAtServer:serverTimestamp()});closeModal();toast('Pengeluaran dicatat.')}catch(err){toast(err.message)}};
+}
+function renderExpenses(){$('tabelpengeluaran').innerHTML=expenses.length?table(['Tanggal','Nama','Kategori','Jumlah','Catatan','Aksi'],expenses.map(e=>[dt(e.createdAt),esc(e.name),esc(e.category),rupiah(e.amount),esc(e.note||'-'),`<button class="danger" onclick="window.deleteExpense('${e.id}')">Hapus</button>`])):'<div class="empty">Belum ada pengeluaran.</div>'}
+window.deleteExpense=async id=>{if(!confirm('Hapus pengeluaran ini?'))return;try{await deleteDoc(doc(db,'pengeluaran',id));toast('Pengeluaran dihapus.')}catch(e){toast(e.message)}};
+function renderBooths(){
+ const map={};sales.filter(s=>isToday(s.createdAt)).forEach(s=>(s.items||[]).forEach(i=>{const k=`${i.boothNo} · ${i.boothName}`;map[k]??={qty:0,total:0};map[k].qty+=i.qty;map[k].total+=i.qty*i.price}));
+ const rows=Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+ $('rekapbooth').innerHTML=rows.length?table(['Booth','Item Terjual','Omzet'],rows.map(([k,v])=>[esc(k),v.qty,rupiah(v.total)])):'<div class="empty">Belum ada penjualan booth hari ini.</div>';
+}
+</script>
+</body>
+</html>
